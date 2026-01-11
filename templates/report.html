@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.rep_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ESTILOS PARA PANTALLA */
+    .toolbar {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        padding: 15px;
+        border-radius: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    .toolbar-title { font-family: 'Cinzel', serif; color: var(--accent-gold); font-weight: bold; }
+    .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ESTILO "PAPEL" (EL INFORME) */
+    .paper-sheet {
+        background: #fdfbf7; /* Blanco roto */
+        color: #1a1a1a;
+        padding: 40px;
+        border-radius: 4px;
+        box-shadow: 0 5px 30px rgba(0,0,0,0.5);
+        font-family: 'Inter', sans-serif;
+        position: relative;
+        max-width: 850px;
+        margin: 0 auto;
+    }
+
+    /* TIPOGRAFÍA DEL INFORME */
+    .paper-sheet h1 { color: #000; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 25px; font-size: 1.8rem; }
+    .paper-sheet h2 { color: #333; margin-top: 30px; font-size: 1.4rem; border-left: 5px solid #d4af37; padding-left: 10px; }
+    .paper-sheet h3 { color: #b45309; text-transform: uppercase; font-size: 0.9rem; margin-top: 25px; letter-spacing: 1px; border-bottom: 1px solid #ddd; }
+    .paper-sheet p, .paper-sheet li { font-size: 1rem; line-height: 1.6; margin-bottom: 10px; color: #333; }
+    
+    .paper-sheet .executive-summary { background: #fff8e1; padding: 20px; border: 1px solid #fcd34d; border-radius: 4px; margin-bottom: 20px; }
+    .paper-sheet .card { background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; box-shadow: none; padding: 15px; }
+    .paper-sheet table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+    .paper-sheet th { background: #f1f5f9; text-align: left; padding: 10px; border-bottom: 2px solid #ccc; font-weight: bold; }
+    .paper-sheet td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+    
+    .table-responsive { overflow-x: auto; width: 100%; margin-bottom: 20px; }
+    
+    @media (max-width: 600px) {
+        .paper-sheet { padding: 20px; }
+        .toolbar { flex-direction: column; align-items: stretch; }
+        .toolbar-actions .btn { flex: 1; text-align: center; }
+        .paper-sheet h1 { font-size: 1.4rem; }
+    }
+
+    /* --- ESTILOS DE IMPRESIÓN (NATIVO DEL NAVEGADOR) --- */
+    @media print {
+        body { background: white; margin: 0; padding: 0; }
+        .toolbar, .topbar, footer, .sidebar, #pdf-generator-container { display: none !important; }
+        .container { max-width: 100%; margin: 0; width: 100%; }
+        .paper-sheet { 
+            box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; 
+            border: none;
+        }
+        /* Forzar impresión de colores de fondo */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+</style>
+<!-- Librería PDF (Versión estable) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <!-- BARRA DE HERRAMIENTAS -->
+    <div class="toolbar">
+        <div class="toolbar-title">{{ t.rep_title }}</div>
+        <div class="toolbar-actions">
+            <a href="/app?lang={{lang}}" class="btn">← {{ t.btn_new }}</a>
+            
+            {% if case_json %}
+            <button class="btn" onclick="downloadJSON()">💾 {{ t.btn_save }}</button>
+            {% endif %}
+            
+            <!-- Botón de impresión nativa (El más seguro) -->
+            <button class="btn" onclick="window.print()" title="Imprimir o Guardar como PDF usando el navegador">🖨️ PDF Nativo</button>
+            
+            <button class="btn" onclick="downloadHTML()">🌐 {{ t.btn_html }}</button>
+            <button class="btn btn-primary" onclick="downloadPDF()">📄 {{ t.btn_pdf }} (Auto)</button>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DEL INFORME -->
+    <div id="report-container">
+        <div class="paper-sheet" id="report-content">
+            <div style="display: flex; justify-content: space-between; font-family: monospace; color: #666; font-size: 0.75rem; margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">
+                <span>{{ t.rep_confidential }}</span>
+                <span id="date-display"></span>
+            </div>
+            
+            {{ report | safe }}
+            
+            <div style="margin-top: 60px; text-align: center; font-size: 0.7rem; color: #888; border-top: 1px solid #eee; padding-top: 15px; font-family: monospace;">
+                {{ t.rep_footer }}<br>
+                {{ t.author }}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('date-display').innerText = new Date().toLocaleDateString('{{lang}}');
+
+    // Fix tablas responsivas
+    document.querySelectorAll('.paper-sheet table').forEach(table => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-responsive';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
+
+    // =================================================================
+    // FUNCIÓN DE DESCARGA NUCLEAR (TIMEOUT EXTENDIDO)
+    // =================================================================
+    function forceDownload(blob, filename) {
+        console.log("Iniciando descarga de:", filename);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        
+        a.click();
+        
+        // Esperamos 5 segundos antes de limpiar. 
+        // Esto previene el error .crdownload en ordenadores lentos.
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            console.log("Limpieza de descarga completada");
+        }, 5000); 
+    }
+
+    // 1. DESCARGAR JSON
+    function downloadJSON() {
+        {% if case_json %}
+        const data = {{ case_json | safe }};
+        const jsonStr = JSON.stringify(data, null, 2);
+        // application/json a veces se abre en pestaña nueva, octet-stream fuerza descarga
+        const blob = new Blob([jsonStr], { type: 'application/octet-stream' });
+        const name = data.target_name ? data.target_name.replace(/[^a-z0-9]/gi, '_') : 'Caso';
+        forceDownload(blob, `Guardian_${name}.json`);
+        {% endif %}
+    }
+
+    // 2. DESCARGAR PDF (Librería)
+    function downloadPDF() {
+        const btn = document.querySelector('.btn-primary');
+        const originalText = btn.innerText;
+        btn.innerText = "Procesando...";
+        btn.disabled = true;
+
+        const element = document.getElementById('report-content');
+        const opt = {
+            margin:       10,
+            filename:     `Guardian_Report_${Date.now()}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Si falla, usar window.print()
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error(err);
+            alert("La generación automática falló. Se abrirá el diálogo de impresión nativo.");
+            window.print(); // Fallback automático
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    // 3. DESCARGAR HTML (Solución definitiva)
+    function downloadHTML() {
+        const styles = document.querySelector('style').innerHTML;
+        const content = document.getElementById('report-content').innerHTML;
+        
+        // Estructura HTML completa para que funcione sin internet
+        const fullHtml = `<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Report Export</title>
+    <!-- Fuentes Google incrustadas -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@600;700&display=swap');
+        
+        body { background: #e5e7eb; padding: 40px; margin: 0; font-family: sans-serif; display: flex; justify-content: center; }
+        
+        /* Estilos del reporte inyectados */
+        ${styles}
+        
+        /* Override para vista offline */
+        .paper-sheet { 
+            max-width: 800px; margin: 0 auto; width: 100%; 
+            background: white; padding: 50px; 
+            box-sizing: border-box; 
+        }
+        /* Ocultar elementos de UI si se colaron */
+        .toolbar, button { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="paper-sheet">
+        ${content}
+    </div>
+</body>
+</html>`;
+
+        // Usamos 'application/octet-stream' para forzar la descarga como archivo
+        // y evitar que el navegador intente renderizarlo y falle.
+        const blob = new Blob([fullHtml], { type: 'application/octet-stream' });
+        forceDownload(blob, `Guardian_Report_${Date.now()}.html`);
+    }
+</script>
+{% endblock %}
+
+
+
+

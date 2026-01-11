@@ -1,0 +1,43 @@
+{% macro input_widget(id_prefix, label, placeholder, t) %}
+<div class="input-widget-container" style="margin-bottom: 30px;">
+    <label>{{ label }}</label>
+    
+    <!-- Botones de pestaña -->
+    <div class="tabs">
+        <button type="button" class="tab-btn active" onclick="switchTab('{{id_prefix}}', 'text', this)">✏️ {{ t.btn_text }}</button>
+        <button type="button" class="tab-btn" onclick="switchTab('{{id_prefix}}', 'audio', this)">🎙️ {{ t.btn_audio }}</button>
+        <button type="button" class="tab-btn" onclick="switchTab('{{id_prefix}}', 'file', this)">📎 {{ t.btn_file }}</button>
+    </div>
+
+    <!-- PANELES: Usan la clase 'hidden' para ocultarse -->
+    
+    <!-- 1. Texto (Visible por defecto) -->
+    <div id="{{id_prefix}}-text" class="tab-panel active">
+        <textarea name="{{id_prefix}}" rows="5" placeholder="{{ placeholder }}"></textarea>
+    </div>
+
+    <!-- 2. Audio (Oculto por defecto) -->
+    <div id="{{id_prefix}}-audio" class="tab-panel hidden">
+        <div class="audio-box">
+            <div style="display: flex; justify-content: center; gap: 10px; align-items: center;">
+                <button type="button" id="{{id_prefix}}-rec-btn" class="btn btn-primary" onclick="toggleRecord('{{id_prefix}}')">
+                    {{ t.rec_start }}
+                </button>
+                <span id="{{id_prefix}}-status" style="font-size: 0.8rem; color: var(--accent-gold);"></span>
+            </div>
+            <input type="file" id="{{id_prefix}}-audio-file" name="{{id_prefix}}_audio" accept="audio/*" style="display:none">
+        </div>
+    </div>
+
+    <!-- 3. Archivo (Oculto por defecto) -->
+    <div id="{{id_prefix}}-file" class="tab-panel hidden">
+        <div class="file-box">
+            <input type="file" name="{{id_prefix}}_file" id="{{id_prefix}}-real-file" class="hidden" onchange="updateFileName('{{id_prefix}}')">
+            <button type="button" class="btn" style="width:100%" onclick="document.getElementById('{{id_prefix}}-real-file').click()">
+                📂 {{ t.btn_file }}
+            </button>
+            <div id="{{id_prefix}}-filename" style="margin-top:10px; font-size:0.8rem; text-align:center;"></div>
+        </div>
+    </div>
+</div>
+{% endmacro %}

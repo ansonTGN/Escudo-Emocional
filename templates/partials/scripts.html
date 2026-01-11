@@ -1,0 +1,219 @@
+<script>
+    // ==========================================
+    // 1. GESTIÓN DE IDIOMA
+    // ==========================================
+    function changeLang(lang) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('lang', lang);
+        window.location.href = url.toString();
+    }
+
+    // ==========================================
+    // 2. GESTIÓN DE MODOS (DEFENSA VS ANÁLISIS)
+    // ==========================================
+    function setMode(mode) {
+        const isDefense = mode === 'defense';
+        
+        // Actualizar botones visuales
+        document.getElementById('btn-mode-defense').classList.toggle('active', isDefense);
+        document.getElementById('btn-mode-analysis').classList.toggle('active', !isDefense);
+        
+        // Gestionar Paneles usando la clase global .hidden
+        const defPanel = document.getElementById('panel-defense');
+        const anaPanel = document.getElementById('panel-analysis');
+
+        if (isDefense) {
+            defPanel.classList.remove('hidden');
+            anaPanel.classList.add('hidden');
+        } else {
+            defPanel.classList.add('hidden');
+            anaPanel.classList.remove('hidden');
+        }
+
+        // Actualizar el endpoint del formulario
+        document.getElementById('main-form').action = isDefense ? "/motors" : "/analyze";
+        
+        // Deshabilitar inputs del modo oculto para evitar enviar datos vacíos
+        const defInputs = document.querySelectorAll('#panel-defense input, #panel-defense select, #panel-defense textarea');
+        const anaInputs = document.querySelectorAll('#panel-analysis input, #panel-analysis select, #panel-analysis textarea');
+        
+        defInputs.forEach(el => el.disabled = !isDefense);
+        anaInputs.forEach(el => el.disabled = isDefense);
+    }
+
+    // ==========================================
+    // 3. IMPORTACIÓN DE CASO (JSON)
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('json-import');
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        
+                        // A. Cambiar al modo correcto según el archivo
+                        if (data.mode === 'analysis') {
+                            setMode('analysis');
+                        } else {
+                            setMode('defense');
+                        }
+
+                        // B. Rellenar campos automáticamente
+                        for (const [key, value] of Object.entries(data)) {
+                            // Buscar input por atributo 'name'
+                            const input = document.querySelector(`[name="${key}"]`);
+                            if (input) {
+                                input.value = value;
+                                // Asegurar textareas
+                                if (input.tagName === 'TEXTAREA') input.innerText = value;
+                            }
+                        }
+                        
+                        alert("Datos del caso cargados correctamente.");
+                        
+                    } catch (err) {
+                        alert("Error al leer el archivo JSON: " + err.message);
+                    }
+                };
+                reader.readAsText(file);
+                // Limpiar para permitir recargar el mismo archivo si es necesario
+                e.target.value = '';
+            });
+        }
+    });
+
+    // ==========================================
+    // 4. INTERFAZ DE USUARIO (TABS Y MODALES)
+    // ==========================================
+    
+    // Modal de Ayuda
+    function openModal() { document.getElementById('help-modal').classList.remove('hidden'); }
+    function closeModal(e) { if(e.target.id === 'help-modal') document.getElementById('help-modal').classList.add('hidden'); }
+    function closeModalForce() { document.getElementById('help-modal').classList.add('hidden'); }
+    
+    // Pestañas de Widgets (Texto/Audio/Archivo)
+    function switchTab(prefix, type, btn) {
+        const container = btn.closest('.input-widget-container');
+        
+        // Actualizar botones
+        container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Ocultar todos los paneles
+        container.querySelectorAll('.tab-panel').forEach(p => {
+            p.classList.add('hidden');
+            p.classList.remove('active');
+        });
+        
+        // Mostrar el seleccionado
+        const target = document.getElementById(prefix + '-' + type);
+        target.classList.remove('hidden');
+        target.classList.add('active');
+    }
+
+    // Actualizar nombre de archivo seleccionado
+    function updateFileName(id) {
+        const input = document.getElementById(id + '-real-file');
+        const display = document.getElementById(id + '-filename');
+        if(input.files.length > 0) display.innerText = "📄 " + input.files[0].name;
+    }
+
+    // ==========================================
+    // 5. GRABADORA DE AUDIO (COMPATIBLE MÓVIL)
+    // ==========================================
+    let mediaRecorder; 
+    let audioChunks = [];
+    
+    // Detectar formato soportado (Safari usa mp4, Chrome usa webm)
+    function getSupportedMimeType() {
+        const types = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus'
+        ];
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) return type;
+        }
+        return ''; 
+    }
+
+    async function toggleRecord(idPrefix) {
+        const btn = document.getElementById(idPrefix + '-rec-btn');
+        const status = document.getElementById(idPrefix + '-status');
+        const fileInput = document.getElementById(idPrefix + '-audio-file');
+        
+        // --- DETENER GRABACIÓN ---
+        if (btn.classList.contains('recording')) {
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            btn.classList.remove('recording');
+            btn.innerText = "Grabar"; // (Idealmente usar variable de traducción)
+            btn.style.background = ""; 
+            
+        // --- INICIAR GRABACIÓN ---
+        } else {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("El navegador no permite acceso al micrófono (requiere HTTPS).");
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mimeType = getSupportedMimeType();
+                
+                if (!mimeType) throw new Error("Navegador no compatible con grabación de audio.");
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = e => { 
+                    if (e.data.size > 0) audioChunks.push(e.data); 
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: mimeType });
+                    
+                    // Definir extensión correcta para que Whisper no falle
+                    let ext = 'webm';
+                    if (mimeType.includes('mp4')) ext = 'm4a';
+                    else if (mimeType.includes('ogg')) ext = 'ogg';
+                    
+                    const filename = `rec_${Date.now()}.${ext}`;
+                    const file = new File([blob], filename, { type: mimeType });
+                    
+                    // Asignar al input oculto
+                    const dt = new DataTransfer(); 
+                    dt.items.add(file); 
+                    fileInput.files = dt.files;
+                    
+                    // Apagar micrófono
+                    stream.getTracks().forEach(track => track.stop());
+
+                    status.innerText = "Listo (" + (file.size/1024).toFixed(0) + "KB)";
+                };
+                
+                mediaRecorder.start();
+                btn.classList.add('recording');
+                btn.innerText = "Parar";
+                btn.style.background = "var(--accent-alert)";
+                status.innerText = "🔴 Grabando...";
+                
+            } catch (err) { 
+                console.error(err);
+                alert("Error Micrófono: " + err.message); 
+            }
+        }
+    }
+
+    // Inicialización: Asegurar estado correcto al cargar
+    window.onload = function() { 
+        setMode('defense'); 
+    };
+</script>

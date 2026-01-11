@@ -1,0 +1,136 @@
+<!-- La clase 'hidden' asegura que esté oculto al inicio -->
+<div id="help-modal" class="modal-overlay hidden" onclick="closeModal(event)">
+    <div class="modal-card">
+        <!-- Botón de cierre grande para móvil -->
+        <button onclick="closeModalForce()" class="close-x">✕</button>
+        
+        <!-- ================== ESPAÑOL ================== -->
+        {% if lang == 'es' %}
+        <h2 class="guide-title">Manual de Operaciones</h2>
+        
+        <div class="guide-section">
+            <h3>1. Protocolo de Uso</h3>
+            <p>El sistema busca patrones ocultos de control. No te preocupes por la redacción, sé directo/a.</p>
+            <ul>
+                <li><strong>Contexto:</strong> Reglas invisibles. <em>"¿Qué pasa si dices que no?"</em></li>
+                <li><strong>Hechos:</strong> Incidentes. <em>"Gritos, silencios, exclusión".</em></li>
+                <li><strong>Sensores:</strong> Neurocepción. <em>"¿Cómo reacciona tu cuerpo?"</em></li>
+            </ul>
+        </div>
+        
+        <div class="guide-section">
+            <h3>2. Semáforo de Riesgo</h3>
+            <div class="sem-box sem-green"><strong>🟢 VERDE (Seguro):</strong> Se permite el disenso. Errores = Aprendizaje.</div>
+            <div class="sem-box sem-yellow"><strong>🟡 AMARILLO (Tóxico):</strong> Reglas ambiguas. Humillación sutil. Ley del hielo.</div>
+            <div class="sem-box sem-red"><strong>🔴 ROJO (Peligro):</strong> Control total. Aislamiento. Miedo existencial.</div>
+        </div>
+
+        <div class="guide-section">
+            <h3>3. Base Científica</h3>
+            <ul class="science-list">
+                <li><strong>Modelo BITE (S. Hassan):</strong> Control Coercitivo.</li>
+                <li><strong>Teoría Polivagal (S. Porges):</strong> Neurocepción de amenaza.</li>
+                <li><strong>Seguridad Psicológica (A. Edmondson):</strong> Entornos sanos.</li>
+            </ul>
+        </div>
+        
+        <button onclick="closeModalForce()" class="btn btn-primary full-width">Entendido</button>
+
+        <!-- ================== CATALÀ ================== -->
+        {% elif lang == 'cat' %}
+        <h2 class="guide-title">Manual d'Operacions</h2>
+        
+        <div class="guide-section">
+            <h3>1. Protocol d'Ús</h3>
+            <p>El sistema cerca patrons ocults de control. No et preocupis per l'estil.</p>
+            <ul>
+                <li><strong>Context:</strong> Regles invisibles. <em>"Què passa si dius que no?"</em></li>
+                <li><strong>Fets:</strong> Incidents. <em>"Crits, silencis, exclusió".</em></li>
+            </ul>
+        </div>
+        
+        <div class="guide-section">
+            <h3>2. Semàfor de Risc</h3>
+            <div class="sem-box sem-green"><strong>🟢 VERD (Segur):</strong> Es permet el dissens. Errors = Aprenentatge.</div>
+            <div class="sem-box sem-yellow"><strong>🟡 GROC (Tòxic):</strong> Regles ambigües. Humiliació subtil. Llei del gel.</div>
+            <div class="sem-box sem-red"><strong>🔴 VERMELL (Perill):</strong> Control total. Aïllament. Por existencial.</div>
+        </div>
+
+        <div class="guide-section">
+            <h3>3. Fonaments Científics</h3>
+            <ul class="science-list">
+                <li><strong>Model BITE (S. Hassan):</strong> Control Coercitiu.</li>
+                <li><strong>Teoria Polivagal (S. Porges):</strong> Neurocepció d'amenaça.</li>
+            </ul>
+        </div>
+        
+        <button onclick="closeModalForce()" class="btn btn-primary full-width">Entesos</button>
+
+        <!-- ================== ENGLISH ================== -->
+        {% else %}
+        <h2 class="guide-title">Operations Manual</h2>
+        
+        <div class="guide-section">
+            <h3>1. Protocol</h3>
+            <p>The system scans for hidden control patterns. Don't worry about grammar.</p>
+            <ul>
+                <li><strong>Context:</strong> Invisible rules. <em>"What happens if you say no?"</em></li>
+                <li><strong>Facts:</strong> Incidents. <em>"Yelling, shunning, gaslighting."</em></li>
+            </ul>
+        </div>
+        
+        <div class="guide-section">
+            <h3>2. Risk Traffic Light</h3>
+            <div class="sem-box sem-green"><strong>🟢 GREEN (Safe):</strong> Dissent allowed. Mistakes = Learning.</div>
+            <div class="sem-box sem-yellow"><strong>🟡 YELLOW (Toxic):</strong> Ambiguous rules. Subtle humiliation.</div>
+            <div class="sem-box sem-red"><strong>🔴 RED (Danger):</strong> Total control. Isolation. Existential fear.</div>
+        </div>
+
+        <div class="guide-section">
+            <h3>3. Scientific Basis</h3>
+            <ul class="science-list">
+                <li><strong>BITE Model (S. Hassan):</strong> Coercive Control.</li>
+                <li><strong>Polyvagal Theory (S. Porges):</strong> Threat neuroception.</li>
+            </ul>
+        </div>
+        
+        <button onclick="closeModalForce()" class="btn btn-primary full-width">Understood</button>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Estilos del Modal */
+    .modal-overlay { 
+        position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; 
+        display: flex; align-items: center; justify-content: center;
+        padding: 15px; backdrop-filter: blur(5px);
+    }
+    
+    .modal-card { 
+        background: #121212; border: 1px solid var(--accent-gold); border-radius: 12px; 
+        width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto;
+        padding: 25px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    }
+
+    .guide-title { color: var(--accent-gold); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; font-size: 1.3rem; }
+    
+    .close-x { 
+        position: absolute; top: 15px; right: 15px; background: #333; border: none; color: #fff; 
+        font-size: 1.2rem; cursor: pointer; width: 35px; height: 35px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+    }
+    
+    .guide-section { margin-bottom: 25px; color: #ccc; }
+    .guide-section h3 { color: #fff; font-size: 1rem; margin-bottom: 10px; border-left: 3px solid var(--accent-gold); padding-left: 10px; }
+    .guide-section ul { padding-left: 20px; margin: 5px 0; }
+    .guide-section li { margin-bottom: 8px; font-size: 0.95rem; }
+    
+    .sem-box { padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); margin-bottom: 8px; font-size: 0.9rem; }
+    .sem-green { border-left: 4px solid var(--accent-safe); }
+    .sem-yellow { border-left: 4px solid #facc15; }
+    .sem-red { border-left: 4px solid var(--accent-alert); }
+    
+    .science-list li { margin-bottom: 5px; font-size: 0.85rem; color: #aaa; }
+    .full-width { width: 100%; margin-top: 15px; padding: 15px; }
+</style>

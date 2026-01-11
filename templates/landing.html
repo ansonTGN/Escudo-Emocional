@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Relacional | Angel A. Urbina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #050505; color: #e2e8f0; font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; padding: 20px;
+            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000 90%);
+        }
+        .container { max-width: 600px; width: 100%; text-align: center; z-index: 10; }
+        
+        h1 { font-family: 'Cinzel', serif; color: #d4af37; font-size: clamp(2rem, 8vw, 3.5rem); margin-bottom: 5px; }
+        .subtitle { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 3px; color: #888; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px; display: inline-block; }
+
+        .lang-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; max-width: 350px; margin: 0 auto 40px auto; }
+        .lang-btn { background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 15px; cursor: pointer; border-radius: 8px; font-size: 0.9rem; transition: 0.2s; }
+        .lang-btn.active, .lang-btn:hover { border-color: #d4af37; color: #d4af37; background: rgba(212,175,55,0.1); }
+
+        .btn-enter { background: #d4af37; color: #000; border: none; padding: 18px 0; width: 100%; max-width: 350px; font-size: 1rem; letter-spacing: 2px; font-weight: bold; cursor: pointer; border-radius: 8px; text-transform: uppercase; }
+        .author-sign { position: absolute; bottom: 20px; font-size: 0.6rem; color: #444; letter-spacing: 1px; font-family: 'Cinzel', serif; width: 100%; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GUARDIAN RELACIONAL</h1>
+        <div class="subtitle">SISTEMA DE DEFENSA</div>
+        
+        <p style="color: #ccc; margin-bottom: 30px;">Selecciona tu idioma / Select Language:</p>
+        
+        <div class="lang-grid">
+            <button class="lang-btn" onclick="selectLang('es', this)">ESPAÑOL</button>
+            <button class="lang-btn" onclick="selectLang('cat', this)">CATALÀ</button>
+            <button class="lang-btn" onclick="selectLang('en', this)">ENGLISH</button>
+        </div>
+
+        <button class="btn-enter" id="enter-btn" onclick="go()">ENTRAR</button>
+    </div>
+
+    <div class="author-sign">ENGINEERED BY ANGEL A. URBINA 2026</div>
+
+    <script>
+        let selectedLang = 'es';
+        document.querySelector('.lang-btn').classList.add('active');
+
+        function selectLang(lang, btn) {
+            selectedLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function go() {
+            document.getElementById('enter-btn').innerText = "LOADING...";
+            setTimeout(() => { window.location.href = `/app?lang=${selectedLang}`; }, 300);
+        }
+    </script>
+</body>
+</html>

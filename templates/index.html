@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% import "components.html" as forms %}
+
+{% block title %}{{ t.title }}{% endblock title %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos de Index */
+    .tabs { display: flex; background: #222; border-radius: 8px; padding: 4px; margin-bottom: 10px; }
+    .tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 10px; border-radius: 6px; font-size: 0.85rem; }
+    .tab-btn.active { background: #333; color: #fff; font-weight: 600; }
+    
+    /* El panel activo debe ser visible (override .hidden) */
+    .tab-panel.active { display: block !important; }
+
+    .mode-switcher { display: flex; gap: 10px; margin-bottom: 25px; justify-content: center; }
+    .mode-chip { padding: 10px 20px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; opacity: 0.6; font-size: 0.9rem; text-align: center; }
+    .mode-chip.active { opacity: 1; border-color: var(--accent-gold); background: rgba(212, 175, 55, 0.1); color: var(--accent-gold); font-weight: bold; }
+
+    .audio-box, .file-box { background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 8px; padding: 20px; }
+
+    .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    @media(min-width: 600px) { .sensor-grid { grid-template-columns: repeat(5, 1fr); } }
+    
+    .sensor-item { background: #151515; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+    .sensor-label { font-size: 0.7rem; color: #aaa; display: flex; align-items: end; height: 35px; margin-bottom: 5px; line-height: 1.1; }
+    .sensor-select { width: 100%; padding: 5px; background: #000; color: #fff; border: 1px solid #444; border-radius: 4px; margin: 0; }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container">
+    
+    {% include "partials/header.html" %}
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="font-size: 1.5rem;">{{ t.title }}</h1>
+        <div style="font-size: 0.7rem; color: #666; letter-spacing: 2px;">{{ t.subtitle }}</div>
+    </div>
+
+    <!-- SELECTOR DE MODO -->
+    <div class="mode-switcher">
+        <div id="btn-mode-defense" class="mode-chip active" onclick="setMode('defense')">🛡️ {{ t.tab_motors }}</div>
+        <div id="btn-mode-analysis" class="mode-chip" onclick="setMode('analysis')">📊 {{ t.tab_system }}</div>
+    </div>
+
+    <form id="main-form" action="/motors" method="post" enctype="multipart/form-data" onsubmit="document.getElementById('loader').style.display='flex'">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        
+        <div class="card">
+            
+            <!-- PANEL 1: DEFENSA (Se mostrará por defecto) -->
+            <div id="panel-defense">
+                <div class="grid-2">
+                    <div>
+                        <label>{{ t.lbl_target }}</label>
+                        <input type="text" name="target_name">
+                    </div>
+                    <div>
+                        <label>{{ t.lbl_relation }}</label>
+                        <select name="relationship">
+                            <option value="peer">{{ t.rel_peer }}</option>
+                            <option value="boss">{{ t.rel_boss }}</option>
+                            <option value="team">{{ t.rel_team }}</option>
+                            <option value="client">{{ t.rel_client }}</option>
+                            <option value="provider">{{ t.rel_provider }}</option>
+                            <option value="adversary">{{ t.rel_adversary }}</option>
+                            <option value="regulator">{{ t.rel_regulator }}</option>
+                            <option value="mentor">{{ t.rel_mentor }}</option>
+                            <option value="other">{{ t.rel_other }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{ forms::input_widget(id_prefix="m_context", label=t.lbl_m_context, placeholder=t.ph_m_context, t=t) }}
+                {{ forms::input_widget(id_prefix="m_observations", label=t.lbl_m_obs, placeholder=t.ph_m_obs, t=t) }}
+                
+                <label>{{ t.lbl_m_goal }}</label>
+                <textarea name="m_goal" rows="2" placeholder="{{ t.ph_m_goal }}"></textarea>
+
+                <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
+                    <label style="color: var(--accent-alert);">{{ t.lbl_signals }}</label>
+                    <span style="font-size: 0.8rem; color: #888;">{{ t.scale_desc }}</span>
+                    
+                    <div class="sensor-grid">
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_curiosity }}</span><select name="sig_curiosity" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_status }}</span><select name="sig_status" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_belonging }}</span><select name="sig_belonging" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_security }}</span><select name="sig_security" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_purpose }}</span><select name="sig_purpose" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_autonomy }}</span><select name="sig_autonomy" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_justice }}</span><select name="sig_justice" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_control }}</span><select name="sig_control" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_mastery }}</span><select name="sig_mastery" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_comfort }}</span><select name="sig_comfort" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: ANÁLISIS TÉCNICO (Oculto inicialmente con .hidden) -->
+            <div id="panel-analysis" class="hidden">
+                {{ forms::input_widget(id_prefix="situation", label=t.lbl_situation, placeholder=t.ph_situation, t=t) }}
+                {{ forms::input_widget(id_prefix="cv", label=t.lbl_cv, placeholder=t.ph_cv, t=t) }}
+                
+                <label>{{ t.lbl_focus }}</label>
+                <textarea name="extra_questions" rows="2" placeholder="{{ t.ph_focus }}"></textarea>
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 18px; margin-top: 10px;">
+            {{ t.btn_motors }}
+        </button>
+    </form>
+</div>
+
+{% include "partials/help_modal.html" %}
+
+{% endblock content %}
+
+{% block scripts %}
+    {% include "partials/scripts.html" %}
+{% endblock scripts %}
+
