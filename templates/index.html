@@ -10,21 +10,47 @@
     .tab-btn { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 10px; border-radius: 6px; font-size: 0.85rem; }
     .tab-btn.active { background: #333; color: #fff; font-weight: 600; }
     
-    /* El panel activo debe ser visible (override .hidden) */
     .tab-panel.active { display: block !important; }
 
-    .mode-switcher { display: flex; gap: 10px; margin-bottom: 25px; justify-content: center; }
-    .mode-chip { padding: 10px 20px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; opacity: 0.6; font-size: 0.9rem; text-align: center; }
+    .mode-switcher { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+    .mode-chip { padding: 10px 20px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; opacity: 0.6; font-size: 0.8rem; text-align: center; }
     .mode-chip.active { opacity: 1; border-color: var(--accent-gold); background: rgba(212, 175, 55, 0.1); color: var(--accent-gold); font-weight: bold; }
 
     .audio-box, .file-box { background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 8px; padding: 20px; }
 
-    .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-    @media(min-width: 600px) { .sensor-grid { grid-template-columns: repeat(5, 1fr); } }
+    /* MENSAJE DE BIENVENIDA EMPÁTICO */
+    .empathy-box {
+        background: rgba(16, 185, 129, 0.05); /* Verde muy suave */
+        border-left: 3px solid var(--accent-safe);
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 0 8px 8px 0;
+    }
+    .empathy-text { font-size: 0.9rem; color: #ccc; font-style: italic; }
+
+    /* GRID SENSORES DETALLADA (TARJETAS) */
+    .sensor-container { margin-top: 25px; border-top: 1px solid #333; padding-top: 20px; }
     
-    .sensor-item { background: #151515; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-    .sensor-label { font-size: 0.7rem; color: #aaa; display: flex; align-items: end; height: 35px; margin-bottom: 5px; line-height: 1.1; }
-    .sensor-select { width: 100%; padding: 5px; background: #000; color: #fff; border: 1px solid #444; border-radius: 4px; margin: 0; }
+    .sensor-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media(min-width: 700px) { .sensor-grid { grid-template-columns: 1fr 1fr; } }
+
+    .sensor-card {
+        background: #161616; border: 1px solid #333; border-radius: 8px; padding: 12px 15px;
+        display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s;
+    }
+    .sensor-card:hover { border-color: #555; background: #1a1a1a; }
+    
+    .sensor-info { padding-right: 15px; flex: 1; }
+    .sensor-title { color: #e2e8f0; font-size: 0.85rem; font-weight: 400; line-height: 1.3; }
+    
+    .sensor-select-wrapper { position: relative; }
+    .sensor-select {
+        appearance: none; -webkit-appearance: none; background: #000; color: var(--accent-gold);
+        border: 1px solid #444; padding: 8px; border-radius: 6px; font-weight: bold;
+        font-size: 1rem; width: 50px; text-align: center; cursor: pointer; margin: 0;
+    }
+    .sensor-select:focus { border-color: var(--accent-gold); outline: none; }
+
 </style>
 {% endblock extra_css %}
 
@@ -49,12 +75,26 @@
         
         <div class="card">
             
-            <!-- PANEL 1: DEFENSA (Se mostrará por defecto) -->
+            <!-- PANEL 1: DEFENSA (MODO EMPÁTICO) -->
             <div id="panel-defense">
+                
+                <!-- AYUDA VISIBLE -->
+                <div class="empathy-box">
+                    <div class="empathy-text">
+                        {% if lang == 'es' %}
+                        <strong>Nota:</strong> Es normal sentirse confundido/a. Si no sabes qué poner, usa el botón de 🎙️ Audio y habla libremente. El sistema ordenará tus ideas. No necesitas ser preciso.
+                        {% elif lang == 'cat' %}
+                        <strong>Nota:</strong> És normal sentir-se confós/a. Si no saps què posar, fes servir el botó de 🎙️ Àudio i parla lliurement. El sistema ordenarà les teves idees.
+                        {% else %}
+                        <strong>Note:</strong> It's normal to feel confused. If you don't know what to write, use the 🎙️ Audio button and speak freely. The system will organize your thoughts.
+                        {% endif %}
+                    </div>
+                </div>
+
                 <div class="grid-2">
                     <div>
                         <label>{{ t.lbl_target }}</label>
-                        <input type="text" name="target_name">
+                        <input type="text" name="target_name" placeholder="Ej. Alex, Mi jefe, Mamá...">
                     </div>
                     <div>
                         <label>{{ t.lbl_relation }}</label>
@@ -78,27 +118,39 @@
                 <label>{{ t.lbl_m_goal }}</label>
                 <textarea name="m_goal" rows="2" placeholder="{{ t.ph_m_goal }}"></textarea>
 
-                <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-                    <label style="color: var(--accent-alert);">{{ t.lbl_signals }}</label>
-                    <span style="font-size: 0.8rem; color: #888;">{{ t.scale_desc }}</span>
+                <div class="sensor-container">
+                    <label style="color: var(--accent-gold); font-size: 1rem; margin-bottom: 5px;">
+                        {{ t.lbl_signals }}
+                    </label>
+                    <div style="font-size: 0.8rem; color: #888; margin-bottom: 20px; font-style: italic;">
+                        {{ t.scale_desc }}
+                    </div>
                     
                     <div class="sensor-grid">
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_curiosity }}</span><select name="sig_curiosity" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_status }}</span><select name="sig_status" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_belonging }}</span><select name="sig_belonging" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_security }}</span><select name="sig_security" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_purpose }}</span><select name="sig_purpose" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_autonomy }}</span><select name="sig_autonomy" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_justice }}</span><select name="sig_justice" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_control }}</span><select name="sig_control" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_mastery }}</span><select name="sig_mastery" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-                        <div class="sensor-item"><span class="sensor-label">{{ t.sig_comfort }}</span><select name="sig_comfort" class="sensor-select"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        <!-- INVOCACIÓN DE LOS 10 SENSORES USANDO LA MACRO IMPORTADA -->
+                        {{ forms::sensor_card(name="sig_curiosity", label=t.sig_curiosity) }}
+                        {{ forms::sensor_card(name="sig_purpose",   label=t.sig_purpose) }}
+                        
+                        {{ forms::sensor_card(name="sig_status",    label=t.sig_status) }}
+                        {{ forms::sensor_card(name="sig_belonging", label=t.sig_belonging) }}
+                        
+                        {{ forms::sensor_card(name="sig_autonomy",  label=t.sig_autonomy) }}
+                        {{ forms::sensor_card(name="sig_control",   label=t.sig_control) }}
+                        
+                        {{ forms::sensor_card(name="sig_mastery",   label=t.sig_mastery) }}
+                        {{ forms::sensor_card(name="sig_justice",   label=t.sig_justice) }}
+                        
+                        {{ forms::sensor_card(name="sig_security",  label=t.sig_security) }}
+                        {{ forms::sensor_card(name="sig_comfort",   label=t.sig_comfort) }}
                     </div>
                 </div>
             </div>
 
-            <!-- PANEL 2: ANÁLISIS TÉCNICO (Oculto inicialmente con .hidden) -->
+            <!-- PANEL 2: ANÁLISIS TÉCNICO -->
             <div id="panel-analysis" class="hidden">
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #444; font-size: 0.8rem; color: #aaa;">
+                    ⚠️ Mode Expert: Useu aquest panell només per a anàlisi sistèmica (PESTEL, Incentius, Estratègia corporativa).
+                </div>
                 {{ forms::input_widget(id_prefix="situation", label=t.lbl_situation, placeholder=t.ph_situation, t=t) }}
                 {{ forms::input_widget(id_prefix="cv", label=t.lbl_cv, placeholder=t.ph_cv, t=t) }}
                 
@@ -121,4 +173,3 @@
 {% block scripts %}
     {% include "partials/scripts.html" %}
 {% endblock scripts %}
-

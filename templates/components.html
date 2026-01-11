@@ -41,3 +41,21 @@
     </div>
 </div>
 {% endmacro %}
+
+{# --- NUEVA MACRO PARA TARJETAS DE SENSORES --- #}
+{% macro sensor_card(name, label) %}
+<div class="sensor-card">
+    <div class="sensor-info">
+        <span class="sensor-title">{{ label }}</span>
+    </div>
+    <div class="sensor-select-wrapper">
+        <select name="{{ name }}" class="sensor-select">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+        </select>
+    </div>
+</div>
+{% endmacro %}
